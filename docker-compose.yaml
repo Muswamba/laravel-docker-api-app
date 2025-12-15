@@ -1,0 +1,65 @@
+services:
+  app:
+    build:
+      context: ./docker/php
+    container_name: laravel_app
+    volumes:
+      - ./:/var/www
+    working_dir: /var/www
+    restart: unless-stopped
+    depends_on:
+      - db
+
+  # 🔌 Dedicated Queue Worker
+  worker:
+    build:
+      context: ./docker/php
+    container_name: laravel_worker
+    volumes:
+      - ./:/var/www
+    working_dir: /var/www
+    restart: unless-stopped
+    depends_on:
+      - app
+      - db
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=60
+
+  nginx:
+    image: nginx:alpine
+    container_name: laravel_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    restart: unless-stopped
+    depends_on:
+      - app
+
+  db:
+    image: mariadb:11
+    container_name: laravel_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: laravel_pma
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: laravel
+      PMA_PASSWORD: secret
+
+volumes:
+  dbdata:
