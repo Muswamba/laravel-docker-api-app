@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Feed\FeedController;
 use App\Http\Controllers\Auth\AuthApiController;
 use App\Http\Controllers\Auth\APIAuthResetPasswordController;
 Route::get('/', function() {
@@ -20,6 +21,18 @@ Route::post('/reset-password/validate-code',
 Route::post('/reset-password',
 [APIAuthResetPasswordController::class, 'resetPassword']);
 
+
+// Refresh token
+Route::post('/auth/refresh', [AuthApiController::class, 'refreshToken']);
+
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
+});
+
+/**
+ * Home feed routes
+ */
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/feed', [FeedController::class, 'index']);
+    Route::get('/explore', [FeedController::class, 'explore']);
 });
